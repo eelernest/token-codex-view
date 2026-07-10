@@ -15,7 +15,7 @@ export default function Home() {
   const { online, loading: healthLoading, retry } = useHealth();
   const { daily, weekly, monthly, cumulative, stats, loading: usageLoading } = useUsage(online);
   const [view, setView] = useState<ViewMode>("daily");
-  const [selectedYear, setSelectedYear] = useState<string>("all");
+  const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
 
   const years = useMemo(() => {
     if (!daily?.data?.length) return [];
@@ -49,7 +49,7 @@ export default function Home() {
         <StatsHeader stats={stats} />
         <ViewTabs active={view} onChange={setView} years={years} selectedYear={selectedYear} onYearChange={setSelectedYear} />
 
-        {view === "daily" && <ContributionGrid data={filteredDaily} />}
+        {view === "daily" && <ContributionGrid data={filteredDaily} compact={selectedYear !== "all"} />}
         {view === "weekly" && <WeeklyChart data={weekly} />}
         {view === "monthly" && <MonthlyChart data={monthly} />}
         {view === "cumulative" && <CumulativeChart data={cumulative} />}

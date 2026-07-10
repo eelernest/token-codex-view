@@ -18,8 +18,12 @@ const MONTH_LABELS = [
 ];
 
 export function MonthlyChart({ data }: { data: MonthlyData | null }) {
-  if (!data?.data?.length) {
-    return <div className="animate-pulse h-48 bg-muted rounded" />;
+  if (!data) {
+    return <div className="h-48 flex items-center justify-center text-sm text-muted-foreground">Could not load monthly data</div>;
+  }
+
+  if (!data.data.length) {
+    return <div className="h-48 flex items-center justify-center text-sm text-muted-foreground">No monthly data</div>;
   }
 
   const chartData = data.data.map((d) => {

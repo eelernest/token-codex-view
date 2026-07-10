@@ -16,7 +16,7 @@ function getLevelColor(level: number, isDark: boolean) {
   return colors[Math.min(level, 4)];
 }
 
-export function ContributionGrid({ data }: { data: DailyData | null }) {
+export function ContributionGrid({ data, compact }: { data: DailyData | null; compact?: boolean }) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
@@ -77,9 +77,15 @@ export function ContributionGrid({ data }: { data: DailyData | null }) {
 
   return (
     <div className="w-full">
-      <div className="overflow-x-auto pb-4">
-        <div className="inline-block">
-          <svg width={svgWidth} height={svgHeight + 20} className="text-xs">
+      <div className={compact ? "" : "overflow-x-auto pb-4"}>
+        <div className={compact ? "w-full" : "inline-block"}>
+          <svg
+            width={compact ? undefined : svgWidth}
+            height={compact ? undefined : svgHeight + 20}
+            viewBox={compact ? `0 0 ${svgWidth} ${svgHeight + 20}` : undefined}
+            className={compact ? "w-full text-xs" : "text-xs"}
+            style={compact ? { height: "auto", maxWidth: svgWidth } : undefined}
+          >
             {months.map((m, i) => (
               <text key={i} x={m.x + 40} y={12} fill="currentColor" className="fill-muted-foreground">
                 {m.label}
