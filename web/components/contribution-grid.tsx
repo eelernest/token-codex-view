@@ -24,13 +24,11 @@ export function ContributionGrid({ data }: { data: DailyData | null }) {
     if (!data?.data?.length) return { weeks: [], months: [] };
 
     const days = data.data;
-    // Build weeks (Sun-Sat)
     const weeks: { date: string; level: number; tokens: number }[][] = [];
     const monthLabels: { index: number; label: string }[] = [];
 
     let week: { date: string; level: number; tokens: number }[] = [];
     const firstDate = new Date(days[0].date + "T00:00:00");
-    // Pad to start of week (Sunday)
     const startDay = firstDate.getDay();
     for (let i = 0; i < startDay; i++) {
       week.push({ date: "", level: 0, tokens: 0 });
@@ -73,73 +71,67 @@ export function ContributionGrid({ data }: { data: DailyData | null }) {
     );
   }
 
-  const svgWidth = weeks.length * (CELL_SIZE + CELL_GAP) + 40;
+  const totalWeeks = weeks.length;
+  const svgWidth = totalWeeks * (CELL_SIZE + CELL_GAP) + 40;
   const svgHeight = 7 * (CELL_SIZE + CELL_GAP) + 30;
 
   return (
-    <div className="overflow-x-auto pb-4">
-      <svg width={svgWidth} height={svgHeight + 16} className="text-xs">
-        {/* Month labels */}
-        {months.map((m, i) => (
-          <text key={i} x={m.x + 40} y={12} fill="currentColor" className="fill-muted-foreground">
-            {m.label}
-          </text>
-        ))}
+    <div className="w-full">
+      <div className="overflow-x-auto pb-4 -mx-4 px-4">
+        <div className="inline-block min-w-0">
+          <svg width={svgWidth} height={svgHeight + 20} className="text-xs">
+            {months.map((m, i) => (
+              <text key={i} x={m.x + 40} y={12} fill="currentColor" className="fill-muted-foreground">
+                {m.label}
+              </text>
+            ))}
 
-        {/* Day labels */}
-        {DAY_LABELS.map((label, i) =>
-          label ? (
-            <text
-              key={i}
-              x={0}
-              y={i * (CELL_SIZE + CELL_GAP) + 30 + CELL_SIZE - 2}
-              fill="currentColor"
-              className="fill-muted-foreground"
-            >
-              {label}
-            </text>
-          ) : null
-        )}
+            {DAY_LABELS.map((label, i) =>
+              label ? (
+                <text
+                  key={i}
+                  x={0}
+                  y={i * (CELL_SIZE + CELL_GAP) + 30 + CELL_SIZE - 2}
+                  fill="currentColor"
+                  className="fill-muted-foreground"
+                >
+                  {label}
+                </text>
+              ) : null
+            )}
 
-        {/* Cells */}
-        {weeks.map((week, wi) =>
-          week.map((day, di) =>
-            day.date ? (
-              <rect
-                key={`${wi}-${di}`}
-                x={wi * (CELL_SIZE + CELL_GAP) + 40}
-                y={di * (CELL_SIZE + CELL_GAP) + 20}
-                width={CELL_SIZE}
-                height={CELL_SIZE}
-                rx={2}
-                fill={getLevelColor(day.level, isDark)}
-                className="grid-cell"
-              >
-                <title>{`${formatDate(day.date)} · ${formatTokens(day.tokens)} tokens`}</title>
-              </rect>
-            ) : null
-          )
-        )}
-
-        {/* Legend */}
+            {weeks.map((week, wi) =>
+              week.map((day, di) =>
+                day.date ? (
+                  <rect
+                    key={`${wi}-${di}`}
+                    x={wi * (CELL_SIZE + CELL_GAP) + 40}
+                    y={di * (CELL_SIZE + CELL_GAP) + 20}
+                    width={CELL_SIZE}
+                    height={CELL_SIZE}
+                    rx={2}
+                    fill={getLevelColor(day.level, isDark)}
+                    className="grid-cell"
+                  >
+                    <title>{`${formatDate(day.date)} · ${formatTokens(day.tokens)} tokens`}</title>
+                  </rect>
+                ) : null
+              )
+            )}
+          </svg>
+        </div>
+      </div>
+      <div className="flex items-center gap-1 justify-end text-xs text-muted-foreground px-1 pb-2">
+        <span>Less</span>
         {[0, 1, 2, 3, 4].map((level) => (
-          <rect
-            key={`legend-${level}`}
-            x={svgWidth - 200 + level * 18}
-            y={svgHeight + 2}
-            width={12}
-            height={12}
-            rx={2}
-            fill={getLevelColor(level, isDark)}
+          <span
+            key={level}
+            className="inline-block w-3 h-3 rounded-sm"
+            style={{ backgroundColor: getLevelColor(level, isDark) }}
           />
         ))}
-        <text x={svgWidth - 210} y={svgHeight + 12} fill="currentColor" className="fill-muted-foreground">
-          Less
-        </text>
-        <text x={svgWidth - 200 + 5 * 18 + 8} y={svgHeight + 12} fill="currentColor" className="fill-muted-foreground">
-          More
-        </text>
-      </svg>
+        <span>More</span>
+      </div>
     </div>
   );
 }
