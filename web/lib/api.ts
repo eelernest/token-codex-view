@@ -2,7 +2,10 @@ const BASE = "http://127.0.0.1:8765";
 
 export async function apiGet<T>(path: string): Promise<T | null> {
   try {
-    const res = await fetch(`${BASE}${path}`);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
+    const res = await fetch(`${BASE}${path}`, { signal: controller.signal });
+    clearTimeout(timer);
     if (!res.ok) return null;
     return res.json();
   } catch {
