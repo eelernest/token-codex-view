@@ -25,10 +25,21 @@ export default function Home() {
 
   const filteredDaily = useMemo(() => {
     if (!daily || selectedYear === "all") return daily;
-    return {
-      ...daily,
-      data: daily.data.filter((d) => d.date.startsWith(selectedYear)),
-    };
+
+    const yearData = daily.data.filter((d) => d.date.startsWith(selectedYear));
+    const dataMap = new Map(yearData.map((d) => [d.date, d]));
+
+    const fullYear: { date: string; tokens: number; level: number }[] = [];
+    const year = parseInt(selectedYear);
+    const start = new Date(year, 0, 1);
+    const end = new Date(year, 11, 31);
+
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toISOString().split("T")[0];
+      fullYear.push(dataMap.get(dateStr) ?? { date: dateStr, tokens: 0, level: 0 });
+    }
+
+    return { ...daily, data: fullYear };
   }, [daily, selectedYear]);
 
   if (!online && !healthLoading) {
