@@ -78,7 +78,7 @@ export function ContributionGrid({ data }: { data: DailyData | null }) {
 
   return (
     <div className="overflow-x-auto pb-4">
-      <svg width={svgWidth} height={svgHeight} className="text-xs">
+      <svg width={svgWidth} height={svgHeight + 16} className="text-xs">
         {/* Month labels */}
         {months.map((m, i) => (
           <text key={i} x={m.x + 40} y={12} fill="currentColor" className="fill-muted-foreground">
@@ -120,6 +120,25 @@ export function ContributionGrid({ data }: { data: DailyData | null }) {
             ) : null
           )
         )}
+
+        {/* Legend */}
+        {[0, 1, 2, 3, 4].map((level) => (
+          <rect
+            key={`legend-${level}`}
+            x={svgWidth - 200 + level * 18}
+            y={svgHeight + 2}
+            width={12}
+            height={12}
+            rx={2}
+            fill={getLevelColor(level, isDark)}
+          />
+        ))}
+        <text x={svgWidth - 210} y={svgHeight + 12} fill="currentColor" className="fill-muted-foreground">
+          Less
+        </text>
+        <text x={svgWidth - 200 + 5 * 18 + 8} y={svgHeight + 12} fill="currentColor" className="fill-muted-foreground">
+          More
+        </text>
       </svg>
     </div>
   );

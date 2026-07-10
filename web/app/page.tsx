@@ -17,24 +17,26 @@ export default function Home() {
 
   if (!online && !healthLoading) {
     return (
-      <main className="min-h-screen max-w-5xl mx-auto px-4 py-8">
+      <main className="min-h-screen flex items-center justify-center px-4">
         <OfflineBanner onRetry={retry} />
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen max-w-5xl mx-auto px-4 py-8">
-      <div className="mb-4">
-        <h1 className="text-lg font-semibold">Token Usage</h1>
+    <main className="min-h-screen flex items-start justify-center pt-12 md:pt-20">
+      <div className="w-full max-w-4xl px-4">
+        <div className="mb-2">
+          <span className="text-xs text-muted-foreground uppercase tracking-widest">Token Usage</span>
+        </div>
+
+        <StatsHeader stats={stats} />
+        <ViewTabs active={view} onChange={setView} />
+
+        {view === "daily" && <ContributionGrid data={daily} />}
+        {view === "weekly" && <WeeklyChart data={weekly} />}
+        {view === "cumulative" && <CumulativeChart data={cumulative} />}
       </div>
-
-      <StatsHeader stats={stats} />
-      <ViewTabs active={view} onChange={setView} />
-
-      {view === "daily" && <ContributionGrid data={daily} />}
-      {view === "weekly" && <WeeklyChart data={weekly} />}
-      {view === "cumulative" && <CumulativeChart data={cumulative} />}
     </main>
   );
 }

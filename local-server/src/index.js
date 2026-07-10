@@ -41,11 +41,10 @@ app.get('/api/usage/daily', (req, res) => {
       SELECT m.data FROM message m
       JOIN session s ON m.session_id = s.id
       WHERE m.data LIKE '%"role":"assistant"%'
-      AND json_extract(m.data, '$.time.completed') >= ?
       AND s.directory NOT LIKE '%.opencode%'
       ${placeholders}
       ORDER BY m.time_created ASC
-    `).all(cutoffStr, ...childSessions);
+    `).all(...childSessions);
 
     const dayMap = new Map();
     let totalTokens = 0;
@@ -57,7 +56,7 @@ app.get('/api/usage/daily', (req, res) => {
       if (!tokens) continue;
       const ts = data.time?.completed || data.time?.created;
       if (!ts) continue;
-      const date = ts.split('T')[0];
+      const date = new Date(ts).toISOString().split('T')[0];
       if (date < cutoffStr) continue;
       const entry = dayMap.get(date) || { total: 0, input: 0, output: 0, reasoning: 0, cacheRead: 0, cacheWrite: 0 };
       entry.total += tokens.total;
@@ -121,7 +120,7 @@ app.get('/api/usage/stats', (_req, res) => {
       if (!tokens) continue;
       const ts = data.time?.completed || data.time?.created;
       if (!ts) continue;
-      const date = ts.split('T')[0];
+      const date = new Date(ts).toISOString().split('T')[0];
       const model = data.modelID || 'unknown';
 
       totalTokens += tokens.total;
@@ -245,11 +244,10 @@ app.get('/api/usage/cumulative', (req, res) => {
       SELECT m.data FROM message m
       JOIN session s ON m.session_id = s.id
       WHERE m.data LIKE '%"role":"assistant"%'
-      AND json_extract(m.data, '$.time.completed') >= ?
       AND s.directory NOT LIKE '%.opencode%'
       ${placeholders}
       ORDER BY m.time_created ASC
-    `).all(cutoffStr, ...childSessions);
+    `).all(...childSessions);
 
     const dayMap = new Map();
     for (const row of rows) {
@@ -258,7 +256,7 @@ app.get('/api/usage/cumulative', (req, res) => {
       if (!tokens) continue;
       const ts = data.time?.completed || data.time?.created;
       if (!ts) continue;
-      const date = ts.split('T')[0];
+      const date = new Date(ts).toISOString().split('T')[0];
       if (date < cutoffStr) continue;
       dayMap.set(date, (dayMap.get(date) || 0) + tokens.total);
     }
