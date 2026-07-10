@@ -20,6 +20,10 @@ export type WeeklyData = {
   data: { weekStart: string; tokens: number; delta: number }[];
 };
 
+export type MonthlyData = {
+  data: { month: string; tokens: number; cumulative: number }[];
+};
+
 export type CumulativeData = {
   data: { date: string; tokens: number; cumulative: number }[];
 };
@@ -49,6 +53,10 @@ export function fetchDaily(days = 365) {
 
 export function fetchWeekly(weeks = 12) {
   return apiGet<WeeklyData>(`/api/usage/weekly?weeks=${weeks}`);
+}
+
+export function fetchMonthly() {
+  return apiGet<MonthlyData>("/api/usage/monthly");
 }
 
 export function fetchCumulative(days = 365) {

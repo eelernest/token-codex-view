@@ -230,6 +230,48 @@ app.get('/api/usage/weekly', (req, res) => {
   }
 });
 
+app.get('/api/usage/monthly', (_req, res) => {
+  try {
+    const db = getDb();
+    const childSessions = db.prepare("SELECT id FROM session WHERE parent_id IS NOT NULL").all().map(r => r.id);
+    const placeholders = childSessions.length ? `AND m.session_id NOT IN (${childSessions.map(() => '?').join(',')})` : '';
+
+    const rows = db.prepare(`
+      SELECT m.data FROM message m
+      JOIN session s ON m.session_id = s.id
+      WHERE m.data LIKE '%"role":"assistant"%'
+      AND s.directory NOT LIKE '%.opencode%'
+      ${placeholders}
+      ORDER BY m.time_created ASC
+    `).all(...childSessions);
+
+    const monthMap = new Map();
+
+    for (const row of rows) {
+      const data = JSON.parse(row.data);
+      const tokens = extractTokens(data);
+      if (!tokens) continue;
+      const ts = data.time?.completed || data.time?.created;
+      if (!ts) continue;
+      const monthKey = new Date(ts).toISOString().slice(0, 7);
+      const entry = monthMap.get(monthKey) || 0;
+      monthMap.set(monthKey, entry + tokens.total);
+    }
+
+    const data = [];
+    let cumulative = 0;
+    const sortedMonths = Array.from(monthMap.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+    for (const [month, tokens] of sortedMonths) {
+      cumulative += tokens;
+      data.push({ month, tokens, cumulative });
+    }
+
+    res.json({ data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/usage/cumulative', (req, res) => {
   try {
     const days = parseInt(req.query.days) || 365;

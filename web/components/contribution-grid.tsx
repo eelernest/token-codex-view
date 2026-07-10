@@ -77,8 +77,8 @@ export function ContributionGrid({ data }: { data: DailyData | null }) {
 
   return (
     <div className="w-full">
-      <div className="overflow-x-auto pb-4 -mx-4 px-4">
-        <div className="inline-block min-w-0">
+      <div className="overflow-x-auto pb-4">
+        <div className="inline-block">
           <svg width={svgWidth} height={svgHeight + 20} className="text-xs">
             {months.map((m, i) => (
               <text key={i} x={m.x + 40} y={12} fill="currentColor" className="fill-muted-foreground">
