@@ -275,42 +275,35 @@ app.get('/api/usage/monthly', (_req, res) => {
 app.get('/api/usage/activity-metrics', (_req, res) => {
   try {
     const db = getDb();
-    const childSessions = db.prepare("SELECT id FROM session WHERE parent_id IS NOT NULL").all().map(r => r.id);
-    const placeholders = childSessions.length ? `AND s.id NOT IN (${childSessions.map(() => '?').join(',')})` : '';
-    const childPlaceholders = childSessions.length ? `AND m.session_id NOT IN (${childSessions.map(() => '?').join(',')})` : '';
 
     // Total sessions
     const totalSessions = db.prepare(`
       SELECT COUNT(*) as cnt FROM session s
       WHERE s.directory NOT LIKE '%.opencode%'
-      ${placeholders}
-    `).all(...childSessions)[0].cnt;
+    `).get().cnt;
 
     // Agents
     const agents = db.prepare(`
       SELECT agent, COUNT(*) as cnt FROM session s
       WHERE s.directory NOT LIKE '%.opencode%'
       AND agent IS NOT NULL
-      ${placeholders}
       GROUP BY agent ORDER BY cnt DESC
-    `).all(...childSessions);
+    `).all();
 
     // Models from session table
     const models = db.prepare(`
       SELECT json_extract(model, '$.id') as mid, COUNT(*) as cnt FROM session s
       WHERE s.directory NOT LIKE '%.opencode%'
       AND model IS NOT NULL
-      ${placeholders}
       GROUP BY mid ORDER BY cnt DESC
-    `).all(...childSessions);
+    `).all();
 
     // Quick mode (explore agent)
     const quickSessions = db.prepare(`
       SELECT COUNT(*) as cnt FROM session s
       WHERE s.agent = 'explore'
       AND s.directory NOT LIKE '%.opencode%'
-      ${placeholders}
-    `).all(...childSessions)[0].cnt;
+    `).get().cnt;
 
     // Tool usage from part table
     const tools = db.prepare(`
@@ -319,9 +312,8 @@ app.get('/api/usage/activity-metrics', (_req, res) => {
       JOIN session s ON p.session_id = s.id
       WHERE json_extract(data, '$.tool') IS NOT NULL
       AND s.directory NOT LIKE '%.opencode%'
-      ${childPlaceholders}
       GROUP BY tool_name ORDER BY cnt DESC
-    `).all(...childSessions);
+    `).all();
 
     // MCP tools (tools containing 'mcp')
     const mcpTools = db.prepare(`
@@ -330,9 +322,8 @@ app.get('/api/usage/activity-metrics', (_req, res) => {
       JOIN session s ON p.session_id = s.id
       WHERE json_extract(data, '$.tool') LIKE '%mcp%'
       AND s.directory NOT LIKE '%.opencode%'
-      ${childPlaceholders}
       GROUP BY tool_name ORDER BY cnt DESC
-    `).all(...childSessions);
+    `).all();
 
     // Skill calls
     const skillCalls = db.prepare(`
@@ -341,8 +332,7 @@ app.get('/api/usage/activity-metrics', (_req, res) => {
       JOIN session s ON p.session_id = s.id
       WHERE json_extract(data, '$.tool') = 'skill'
       AND s.directory NOT LIKE '%.opencode%'
-      ${childPlaceholders}
-    `).all(...childSessions)[0].cnt;
+    `).get().cnt;
 
     // Distinct tools count
     const distinctTools = db.prepare(`
@@ -351,8 +341,7 @@ app.get('/api/usage/activity-metrics', (_req, res) => {
       JOIN session s ON p.session_id = s.id
       WHERE json_extract(data, '$.tool') IS NOT NULL
       AND s.directory NOT LIKE '%.opencode%'
-      ${childPlaceholders}
-    `).all(...childSessions)[0].cnt;
+    `).get().cnt;
 
     // Total tool calls
     const totalToolCalls = db.prepare(`
@@ -361,8 +350,7 @@ app.get('/api/usage/activity-metrics', (_req, res) => {
       JOIN session s ON p.session_id = s.id
       WHERE json_extract(data, '$.tool') IS NOT NULL
       AND s.directory NOT LIKE '%.opencode%'
-      ${childPlaceholders}
-    `).all(...childSessions)[0].cnt;
+    `).get().cnt;
 
     // Reasoning model: pick model with most sessions that is NOT flash/fast
     // We'll identify reasoning models as non-flash models (big-pickle etc.)
@@ -371,10 +359,11 @@ app.get('/api/usage/activity-metrics', (_req, res) => {
     // Group MCP tools by base name
     const mcpGrouped = {};
     for (const t of mcpTools) {
-      const base = t.tool_name.replace(/_[^_]+$/, '');
+      const match = t.tool_name.match(/^(.*-mcp)_(.*)$/);
+      const base = match ? match[1] : t.tool_name;
+      const op = match ? match[2] : 'unknown';
       if (!mcpGrouped[base]) mcpGrouped[base] = { name: base, calls: 0, operations: [] };
       mcpGrouped[base].calls += t.cnt;
-      const op = t.tool_name.slice(base.length + 1);
       mcpGrouped[base].operations.push({ name: op, calls: t.cnt });
     }
 
