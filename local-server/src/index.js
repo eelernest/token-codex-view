@@ -10,6 +10,30 @@ const HOST = '127.0.0.1';
 app.use(cors());
 app.use(express.json());
 
+// Auto-shutdown watchdog (only when OPENCODE_SERVER_WATCHDOG=1 is set by plugin)
+if (process.env.OPENCODE_SERVER_WATCHDOG === '1') {
+  const PARENT_PID = process.ppid;
+  const SHUTDOWN_GRACE = 6;
+  let parentMissingCount = 0;
+
+  function checkParentAlive() {
+    try {
+      process.kill(PARENT_PID, 0);
+      parentMissingCount = 0;
+    } catch {
+      parentMissingCount++;
+      if (parentMissingCount >= SHUTDOWN_GRACE) {
+        console.log(`[token-codex] Parent process (${PARENT_PID}) not found, shutting down`);
+        closeDb();
+        process.exit(0);
+      }
+    }
+  }
+
+  setInterval(checkParentAlive, 10000);
+  console.log(`[token-codex] Watchdog enabled (parent PID: ${PARENT_PID})`);
+}
+
 function extractTokens(data) {
   if (!data || !data.tokens) return null;
   const t = data.tokens;

@@ -60,7 +60,7 @@ Para que el servidor arranque y se cierre solo con OpenCode:
 Creá `~/.config/opencode/plugins/codexview-server.js` con el siguiente contenido, ajustando `PROJECT_DIR` a la ruta de tu `local-server/`:
 
 ```javascript
-import { spawn } from "child_process";
+import { spawn, spawnSync } from "child_process";
 import { join } from "path";
 
 const SERVER_PORT = 8765;
@@ -97,6 +97,7 @@ async function startServer() {
     cwd: PROJECT_DIR,
     stdio: "ignore",
     detached: false,
+    env: { ...process.env, OPENCODE_SERVER_WATCHDOG: "1" },
   });
   serverProcess.on("exit", () => { serverProcess = null; });
   serverProcess.on("error", (err) => {
@@ -115,8 +116,8 @@ function stopServer() {
   if (!serverProcess) return;
   try {
     if (process.platform === "win32") {
-      spawn("taskkill", ["/pid", String(serverProcess.pid), "/f", "/t"], {
-        stdio: "ignore", windowsHide: true,
+      spawnSync("taskkill", ["/pid", String(serverProcess.pid), "/f", "/t"], {
+        stdio: "ignore",
       });
     } else {
       serverProcess.kill("SIGTERM");
@@ -125,9 +126,12 @@ function stopServer() {
   serverProcess = null;
 }
 
+process.on("SIGINT", () => { stopServer(); process.exit(0); });
+process.on("SIGTERM", () => { stopServer(); process.exit(0); });
+process.on("exit", stopServer);
+
 const plugin = async () => {
   await startServer();
-  process.on("exit", stopServer);
   return {};
 };
 
