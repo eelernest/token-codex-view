@@ -272,6 +272,128 @@ app.get('/api/usage/monthly', (_req, res) => {
   }
 });
 
+app.get('/api/usage/activity-metrics', (_req, res) => {
+  try {
+    const db = getDb();
+    const childSessions = db.prepare("SELECT id FROM session WHERE parent_id IS NOT NULL").all().map(r => r.id);
+    const placeholders = childSessions.length ? `AND s.id NOT IN (${childSessions.map(() => '?').join(',')})` : '';
+    const childPlaceholders = childSessions.length ? `AND m.session_id NOT IN (${childSessions.map(() => '?').join(',')})` : '';
+
+    // Total sessions
+    const totalSessions = db.prepare(`
+      SELECT COUNT(*) as cnt FROM session s
+      WHERE s.directory NOT LIKE '%.opencode%'
+      ${placeholders}
+    `).all(...childSessions)[0].cnt;
+
+    // Agents
+    const agents = db.prepare(`
+      SELECT agent, COUNT(*) as cnt FROM session s
+      WHERE s.directory NOT LIKE '%.opencode%'
+      AND agent IS NOT NULL
+      ${placeholders}
+      GROUP BY agent ORDER BY cnt DESC
+    `).all(...childSessions);
+
+    // Models from session table
+    const models = db.prepare(`
+      SELECT json_extract(model, '$.id') as mid, COUNT(*) as cnt FROM session s
+      WHERE s.directory NOT LIKE '%.opencode%'
+      AND model IS NOT NULL
+      ${placeholders}
+      GROUP BY mid ORDER BY cnt DESC
+    `).all(...childSessions);
+
+    // Quick mode (explore agent)
+    const quickSessions = db.prepare(`
+      SELECT COUNT(*) as cnt FROM session s
+      WHERE s.agent = 'explore'
+      AND s.directory NOT LIKE '%.opencode%'
+      ${placeholders}
+    `).all(...childSessions)[0].cnt;
+
+    // Tool usage from part table
+    const tools = db.prepare(`
+      SELECT json_extract(data, '$.tool') as tool_name, COUNT(*) as cnt
+      FROM part p
+      JOIN session s ON p.session_id = s.id
+      WHERE json_extract(data, '$.tool') IS NOT NULL
+      AND s.directory NOT LIKE '%.opencode%'
+      ${childPlaceholders}
+      GROUP BY tool_name ORDER BY cnt DESC
+    `).all(...childSessions);
+
+    // MCP tools (tools containing 'mcp')
+    const mcpTools = db.prepare(`
+      SELECT json_extract(data, '$.tool') as tool_name, COUNT(*) as cnt
+      FROM part p
+      JOIN session s ON p.session_id = s.id
+      WHERE json_extract(data, '$.tool') LIKE '%mcp%'
+      AND s.directory NOT LIKE '%.opencode%'
+      ${childPlaceholders}
+      GROUP BY tool_name ORDER BY cnt DESC
+    `).all(...childSessions);
+
+    // Skill calls
+    const skillCalls = db.prepare(`
+      SELECT COUNT(*) as cnt
+      FROM part p
+      JOIN session s ON p.session_id = s.id
+      WHERE json_extract(data, '$.tool') = 'skill'
+      AND s.directory NOT LIKE '%.opencode%'
+      ${childPlaceholders}
+    `).all(...childSessions)[0].cnt;
+
+    // Distinct tools count
+    const distinctTools = db.prepare(`
+      SELECT COUNT(DISTINCT json_extract(data, '$.tool')) as cnt
+      FROM part p
+      JOIN session s ON p.session_id = s.id
+      WHERE json_extract(data, '$.tool') IS NOT NULL
+      AND s.directory NOT LIKE '%.opencode%'
+      ${childPlaceholders}
+    `).all(...childSessions)[0].cnt;
+
+    // Total tool calls
+    const totalToolCalls = db.prepare(`
+      SELECT COUNT(*) as cnt
+      FROM part p
+      JOIN session s ON p.session_id = s.id
+      WHERE json_extract(data, '$.tool') IS NOT NULL
+      AND s.directory NOT LIKE '%.opencode%'
+      ${childPlaceholders}
+    `).all(...childSessions)[0].cnt;
+
+    // Reasoning model: pick model with most sessions that is NOT flash/fast
+    // We'll identify reasoning models as non-flash models (big-pickle etc.)
+    const reasoningModel = models.find(m => !m.mid.includes('flash')) || null;
+
+    // Group MCP tools by base name
+    const mcpGrouped = {};
+    for (const t of mcpTools) {
+      const base = t.tool_name.replace(/_[^_]+$/, '');
+      if (!mcpGrouped[base]) mcpGrouped[base] = { name: base, calls: 0, operations: [] };
+      mcpGrouped[base].calls += t.cnt;
+      const op = t.tool_name.slice(base.length + 1);
+      mcpGrouped[base].operations.push({ name: op, calls: t.cnt });
+    }
+
+    res.json({
+      quickModeSessions: quickSessions,
+      reasoningModel: reasoningModel ? { name: reasoningModel.mid, sessions: reasoningModel.cnt } : null,
+      distinctSkills: distinctTools,
+      totalToolCalls,
+      totalSessions,
+      tools: tools.slice(0, 10),
+      mcpTools: Object.values(mcpGrouped),
+      skillCalls,
+      agents,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/usage/cumulative', (req, res) => {
   try {
     const days = parseInt(req.query.days) || 365;

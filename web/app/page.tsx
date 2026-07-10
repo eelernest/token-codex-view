@@ -7,13 +7,14 @@ import { OfflineBanner } from "@/components/offline-banner";
 import { StatsHeader } from "@/components/stats-header";
 import { ViewTabs } from "@/components/view-tabs";
 import { ContributionGrid } from "@/components/contribution-grid";
+import { ActivityMetricsCard } from "@/components/activity-metrics";
 import { WeeklyChart } from "@/components/weekly-chart";
 import { MonthlyChart } from "@/components/monthly-chart";
 import { CumulativeChart } from "@/components/cumulative-chart";
 
 export default function Home() {
   const { online, loading: healthLoading, retry } = useHealth();
-  const { daily, weekly, monthly, cumulative, stats, loading: usageLoading } = useUsage(online);
+  const { daily, weekly, monthly, cumulative, stats, activity, loading: usageLoading } = useUsage(online);
   const [view, setView] = useState<ViewMode>("daily");
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
 
@@ -60,7 +61,12 @@ export default function Home() {
         <StatsHeader stats={stats} />
         <ViewTabs active={view} onChange={setView} years={years} selectedYear={selectedYear} onYearChange={setSelectedYear} />
 
-        {view === "daily" && <ContributionGrid data={filteredDaily} compact={selectedYear !== "all"} />}
+        {view === "daily" && (
+          <>
+            <ContributionGrid data={filteredDaily} compact={selectedYear !== "all"} />
+            <ActivityMetricsCard data={activity} />
+          </>
+        )}
         {view === "weekly" && <WeeklyChart data={weekly} />}
         {view === "monthly" && <MonthlyChart data={monthly} />}
         {view === "cumulative" && <CumulativeChart data={cumulative} />}

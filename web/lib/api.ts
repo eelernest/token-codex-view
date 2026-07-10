@@ -28,6 +28,18 @@ export type CumulativeData = {
   data: { date: string; tokens: number; cumulative: number }[];
 };
 
+export type ActivityMetrics = {
+  quickModeSessions: number;
+  reasoningModel: { name: string; sessions: number } | null;
+  distinctSkills: number;
+  totalToolCalls: number;
+  totalSessions: number;
+  tools: { tool_name: string; cnt: number }[];
+  mcpTools: { name: string; calls: number; operations: { name: string; calls: number }[] }[];
+  skillCalls: number;
+  agents: { agent: string; cnt: number }[];
+};
+
 export type StatsData = {
   totalTokens: number;
   activeDays: number;
@@ -53,6 +65,10 @@ export function fetchDaily(days = 365) {
 
 export function fetchWeekly(weeks = 12) {
   return apiGet<WeeklyData>(`/api/usage/weekly?weeks=${weeks}`);
+}
+
+export function fetchActivityMetrics() {
+  return apiGet<ActivityMetrics>("/api/usage/activity-metrics");
 }
 
 export function fetchMonthly() {
