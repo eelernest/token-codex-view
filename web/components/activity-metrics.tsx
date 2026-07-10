@@ -36,7 +36,17 @@ export function ActivityMetricsCard({ data }: { data: ActivityMetrics | null }) 
               ))}
             </div>
           )}
-          <Row label="Skill" value={`${data.skillCalls} llamadas`} />
+          <div>
+            <span className="text-xs text-muted-foreground uppercase tracking-wider">Skill</span>
+            {data.skillNames.length > 0 ? data.skillNames.map((s) => (
+              <div key={s.name} className="flex justify-between text-sm ml-2">
+                <span>{s.name}</span>
+                <span className="text-muted-foreground">{s.count} llamadas</span>
+              </div>
+            )) : (
+              <div className="text-sm text-muted-foreground ml-2">{data.skillCalls} llamadas</div>
+            )}
+          </div>
           <div>
             <span className="text-xs text-muted-foreground uppercase tracking-wider">Agentes</span>
             {data.agents.map((a) => (

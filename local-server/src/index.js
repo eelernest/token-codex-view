@@ -325,14 +325,23 @@ app.get('/api/usage/activity-metrics', (_req, res) => {
       GROUP BY tool_name ORDER BY cnt DESC
     `).all();
 
-    // Skill calls
-    const skillCalls = db.prepare(`
-      SELECT COUNT(*) as cnt
-      FROM part p
+    // Skill calls with names
+    const skillCallsData = db.prepare(`
+      SELECT data FROM part p
       JOIN session s ON p.session_id = s.id
       WHERE json_extract(data, '$.tool') = 'skill'
+      AND json_extract(data, '$.state.status') = 'completed'
       AND s.directory NOT LIKE '%.opencode%'
-    `).get().cnt;
+    `).all();
+
+    const skillCalls = skillCallsData.length;
+    const skillCounts = new Map();
+    for (const row of skillCallsData) {
+      const d = JSON.parse(row.data);
+      const name = d.state?.input?.name || d.state?.metadata?.name || 'unknown';
+      skillCounts.set(name, (skillCounts.get(name) || 0) + 1);
+    }
+    const skillNames = Array.from(skillCounts.entries()).map(([name, count]) => ({ name, count }));
 
     // Distinct tools count
     const distinctTools = db.prepare(`
@@ -376,6 +385,7 @@ app.get('/api/usage/activity-metrics', (_req, res) => {
       tools: tools.slice(0, 10),
       mcpTools: Object.values(mcpGrouped),
       skillCalls,
+      skillNames,
       agents,
     });
   } catch (err) {

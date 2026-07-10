@@ -40,6 +40,7 @@ export type ActivityMetrics = {
   tools: { tool_name: string; cnt: number }[];
   mcpTools: { name: string; calls: number; operations: { name: string; calls: number }[] }[];
   skillCalls: number;
+  skillNames: { name: string; count: number }[];
   agents: { agent: string; cnt: number }[];
 };
 
