@@ -4,6 +4,7 @@ node_modules/
 # next.js
 web/.next/
 web/out/
+web/node_modules/
 
 # production
 web/build/
