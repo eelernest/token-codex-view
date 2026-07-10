@@ -3,8 +3,8 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { fetchHealth } from "@/lib/api";
 
-const POLL_INTERVAL = 30000;
-const MAX_FAILURES = 3;
+const POLL_INTERVAL = 10000;
+const MAX_FAILURES = 2;
 
 export function useHealth() {
   const [online, setOnline] = useState(false);
