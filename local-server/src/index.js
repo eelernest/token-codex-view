@@ -10,29 +10,38 @@ const HOST = '127.0.0.1';
 app.use(cors());
 app.use(express.json());
 
-// Auto-shutdown watchdog (only when OPENCODE_SERVER_WATCHDOG=1 is set by plugin)
-if (process.env.OPENCODE_SERVER_WATCHDOG === '1') {
-  const PARENT_PID = process.ppid;
-  const SHUTDOWN_GRACE = 6;
-  let parentMissingCount = 0;
+// Auto-shutdown watchdog: shuts down server when OpenCode is not running
+import { execSync } from 'child_process';
 
-  function checkParentAlive() {
-    try {
-      process.kill(PARENT_PID, 0);
-      parentMissingCount = 0;
-    } catch {
-      parentMissingCount++;
-      if (parentMissingCount >= SHUTDOWN_GRACE) {
-        console.log(`[token-codex] Parent process (${PARENT_PID}) not found, shutting down`);
-        closeDb();
-        process.exit(0);
-      }
+function isOpenCodeRunning() {
+  try {
+    if (process.platform === 'win32') {
+      const out = execSync('tasklist /NH /FI "IMAGENAME eq OpenCode.exe"', { encoding: 'utf8', timeout: 3000, stdio: ['ignore', 'pipe', 'ignore'] });
+      return out.includes('OpenCode.exe');
+    } else {
+      execSync('pgrep -x opencode', { encoding: 'utf8', timeout: 3000, stdio: ['ignore', 'pipe', 'ignore'] });
+      return true;
+    }
+  } catch {
+    return false;
+  }
+}
+
+let opencodeMissingCount = 0;
+const SHUTDOWN_AFTER = 6; // ~60s without OpenCode
+
+setInterval(() => {
+  if (isOpenCodeRunning()) {
+    opencodeMissingCount = 0;
+  } else {
+    opencodeMissingCount++;
+    if (opencodeMissingCount >= SHUTDOWN_AFTER) {
+      console.log('[token-codex] OpenCode not detected, shutting down');
+      closeDb();
+      process.exit(0);
     }
   }
-
-  setInterval(checkParentAlive, 10000);
-  console.log(`[token-codex] Watchdog enabled (parent PID: ${PARENT_PID})`);
-}
+}, 10000);
 
 function extractTokens(data) {
   if (!data || !data.tokens) return null;

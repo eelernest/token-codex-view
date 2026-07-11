@@ -97,7 +97,7 @@ async function startServer() {
     cwd: PROJECT_DIR,
     stdio: "ignore",
     detached: false,
-    env: { ...process.env, OPENCODE_SERVER_WATCHDOG: "1" },
+    env: { ...process.env },
   });
   serverProcess.on("exit", () => { serverProcess = null; });
   serverProcess.on("error", (err) => {
