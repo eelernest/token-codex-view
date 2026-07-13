@@ -59,7 +59,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center">
+    <main className="min-h-screen flex items-start justify-center pt-8 sm:pt-12">
       <div className="w-full max-w-4xl px-3 sm:px-4">
         <div className="mb-2">
           <span className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-widest">Token Usage</span>

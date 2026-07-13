@@ -19,8 +19,8 @@ export function StatsHeader({ stats, todayTokens, dailyLimit }: { stats: StatsDa
   const pct = dailyLimit && todayTokens ? Math.min(100, (todayTokens / dailyLimit) * 100) : 0;
 
   return (
-    <div className="mb-6 sm:mb-8">
-      <div className="flex items-center justify-between gap-4 mb-4 sm:mb-6">
+    <div className="mb-10 sm:mb-14">
+      <div className="flex items-center justify-between gap-4 mb-6">
         <div className="flex items-baseline gap-2">
           <span className="text-2xl sm:text-3xl font-bold">{formatTokens(stats.totalTokens)}</span>
           <span className="text-xs sm:text-sm text-muted-foreground">tokens acumulados</span>
