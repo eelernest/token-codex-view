@@ -24,6 +24,13 @@ export default function Home() {
     return Array.from(yearSet).sort();
   }, [daily]);
 
+  const todayTokens = useMemo(() => {
+    if (!daily?.data?.length) return 0;
+    const today = new Date().toISOString().split("T")[0];
+    const day = daily.data.find((d) => d.date === today);
+    return day?.tokens ?? 0;
+  }, [daily]);
+
   const filteredDaily = useMemo(() => {
     if (!daily || selectedYear === "all") return daily;
 
@@ -58,7 +65,7 @@ export default function Home() {
           <span className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-widest">Token Usage</span>
         </div>
 
-        <StatsHeader stats={stats} />
+        <StatsHeader stats={stats} todayTokens={todayTokens} dailyLimit={30000000} />
         <ViewTabs active={view} onChange={setView} years={years} selectedYear={selectedYear} onYearChange={setSelectedYear} />
 
         {view === "daily" && (
