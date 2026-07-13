@@ -17,6 +17,7 @@ export function StatsHeader({ stats, todayTokens, dailyLimit }: { stats: StatsDa
   }
 
   const pct = dailyLimit && todayTokens ? Math.min(100, (todayTokens / dailyLimit) * 100) : 0;
+  const fmtExact = (n: number) => n.toLocaleString("en-US");
 
   return (
     <div className="mb-10 sm:mb-14">
@@ -38,9 +39,9 @@ export function StatsHeader({ stats, todayTokens, dailyLimit }: { stats: StatsDa
                   }}
                 />
               </div>
-              <span className="text-xs font-semibold whitespace-nowrap">
+              <span className="text-xs font-semibold whitespace-nowrap" title={`${fmtExact(todayTokens || 0)} / ${fmtExact(dailyLimit)}`}>
                 {formatTokens(todayTokens || 0)}
-                <span className="text-muted-foreground font-normal"> / {formatTokens(dailyLimit)}</span>
+                <span className="text-muted-foreground font-normal"> / {formatTokens(dailyLimit)} · {pct.toFixed(1)}%</span>
               </span>
             </div>
           </div>
